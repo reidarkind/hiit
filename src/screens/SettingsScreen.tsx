@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { AppState, Profile } from "../types";
 import { APP_VERSION, COFFEE_URL, OTHER_APPS_URL } from "../lib/constants";
-import { applyAppUpdate, browserUpdateBridge, checkForAppUpdate, type UpdateCheckResult } from "../pwa/updates";
+import { applyAppUpdate, browserUpdateBridge, checkForAppUpdate, waitForServiceWorkerControl, type UpdateCheckResult } from "../pwa/updates";
 import { Icon } from "../ui/icons";
 
 export function SettingsScreen({
@@ -54,7 +54,7 @@ export function SettingsScreen({
             <button className="iconbtn" aria-label="Fem minutter senere" onClick={() => patch({ reminderMinute: (profile.reminderMinute + 5) % 60 })}>+</button>
           </div>
         </div>
-        <p className="muted small">Klokken er 24 timer. Morgenfugl er en økt ferdig før 09:00, og det styrer appen.</p>
+        <p className="muted small">Klokken er 24 timer.</p>
       </section>
       <label className="between card">Lyd <input type="checkbox" checked={profile.sound} onChange={(event) => patch({ sound: event.target.checked })} /></label>
       <label className="between card">Vibrasjon <input type="checkbox" checked={profile.haptics} onChange={(event) => patch({ haptics: event.target.checked })} /></label>
@@ -85,7 +85,10 @@ export function SettingsScreen({
             <p className="muted small">Ny versjon. Trykk for å laste inn.</p>
             <button
               className="btn"
-              onClick={() => void applyAppUpdate(browserUpdateBridge(), { reload: () => window.location.reload() })}
+              onClick={() => void applyAppUpdate(browserUpdateBridge(), {
+                reload: () => window.location.reload(),
+                whenControlled: waitForServiceWorkerControl,
+              })}
             >
               Last inn ny versjon
             </button>

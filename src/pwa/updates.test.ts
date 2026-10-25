@@ -43,11 +43,18 @@ describe("oppdatering", () => {
     expect(result).toBe("offline");
   });
 
-  it("ber ventende versjon om å ta over og laster siden på nytt", async () => {
+  it("venter til den nye versjonen har tatt over før siden lastes på nytt", async () => {
     const reload = vi.fn();
     const env = bridge({ online: true, waiting: true });
-    await applyAppUpdate(env, { reload });
-    expect(env.worker?.postMessage).toHaveBeenCalledWith({ type: "SKIP_WAITING" });
+    let release = () => {};
+    const controlled = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const pending = applyAppUpdate(env, { reload, whenControlled: () => controlled });
+    await vi.waitFor(() => expect(env.worker?.postMessage).toHaveBeenCalledWith({ type: "SKIP_WAITING" }));
+    expect(reload).not.toHaveBeenCalled();
+    release();
+    await pending;
     expect(reload).toHaveBeenCalledTimes(1);
   });
 });

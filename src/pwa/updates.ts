@@ -26,10 +26,33 @@ export async function checkForAppUpdate(bridge: UpdateBridge): Promise<UpdateChe
   return registration.waiting ? "available" : "current";
 }
 
-export async function applyAppUpdate(bridge: UpdateBridge, actions: { reload: () => void }): Promise<void> {
+export async function applyAppUpdate(
+  bridge: UpdateBridge,
+  actions: { reload: () => void; whenControlled?: () => Promise<void> },
+): Promise<void> {
   const registration = await bridge.getRegistration();
-  registration?.waiting?.postMessage({ type: "SKIP_WAITING" });
+  const waiting = registration?.waiting;
+  if (waiting) {
+    const controlled = actions.whenControlled?.() ?? Promise.resolve();
+    waiting.postMessage({ type: "SKIP_WAITING" });
+    await controlled;
+  }
   actions.reload();
+}
+
+export function waitForServiceWorkerControl(timeoutMs = 4000): Promise<void> {
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return Promise.resolve();
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      navigator.serviceWorker.removeEventListener("controllerchange", finish);
+      resolve();
+    };
+    navigator.serviceWorker.addEventListener("controllerchange", finish);
+    window.setTimeout(finish, timeoutMs);
+  });
 }
 
 export function browserUpdateBridge(): UpdateBridge {
