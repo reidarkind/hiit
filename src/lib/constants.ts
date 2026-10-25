@@ -1,0 +1,11 @@
+export const STORAGE_KEY = "hiit-v1";
+export const APP_NAME = "HIIT";
+export const APP_VERSION = "1.0.0";
+export const PAGES_URL = "https://reidarkind.github.io/hiit/";
+export const EPOCH = "2026-01-01";
+export const FREEZE_CAP = 2;
+export const MIN_STREAK_SECONDS = 60;
+export const MORNING_BIRD_MINUTES = 9 * 60;
+export const OTHER_APPS_URL = "https://reidarkind.github.io/myapps/";
+export const COFFEE_URL = "https://buymeacoffee.com/reidarkind";
+export const CODE_PREFIX = "HIIT";
