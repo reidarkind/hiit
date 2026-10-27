@@ -53,6 +53,8 @@ describe("koder", () => {
     const text = shareMessage({ kind: "G", name: "Reidar", sessionName: "Klassisk 7", code: "HIIT-G-KL7-K7NP-AKK-QQ" });
     expect(text).toContain("Reidar har gjennomført «Klassisk 7»");
     expect(text).toContain("HIIT-G-KL7-K7NP-AKK-QQ");
-    expect(text).toContain("https://reidarkind.github.io/hiit/#k=");
+    expect(text).toContain("https://reidarkind.github.io/hiit/");
+    expect(text).not.toContain("#k=");
+    expect(text).toContain("Legg inn en kode");
   });
 });

@@ -2,6 +2,7 @@ import type { AppState, Profile, Session } from "../types";
 import { STORAGE_KEY } from "./constants";
 import { exerciseById } from "../data/exercises";
 import { randomId } from "./id";
+import { emptyWeek } from "./plan";
 
 export function defaultProfile(id: string): Profile {
   return {
@@ -32,7 +33,14 @@ export function freshState(id = ""): AppState {
     partners: [],
     challenges: [],
     reminderDate: null,
+    favorites: [],
+    planWeek: emptyWeek(),
   };
+}
+
+function cleanPlan(value: unknown): (string | null)[] {
+  const list = Array.isArray(value) ? value : [];
+  return emptyWeek().map((_, index) => (typeof list[index] === "string" && list[index] ? list[index] : null));
 }
 
 function cleanSession(value: Partial<Session> | undefined): Session | null {
@@ -86,6 +94,8 @@ export function parseState(raw: string | null, idFactory: () => string = () => r
       partners: Array.isArray(data.partners) ? data.partners : [],
       challenges: Array.isArray(data.challenges) ? data.challenges : [],
       reminderDate: data.reminderDate ?? null,
+      favorites: Array.isArray(data.favorites) ? data.favorites.filter((id): id is string => typeof id === "string") : [],
+      planWeek: cleanPlan(data.planWeek),
     };
   } catch {
     return freshState(idFactory());

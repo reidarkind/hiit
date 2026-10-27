@@ -1,7 +1,7 @@
 import type { Exercise } from "../types";
 import { builtinSessions } from "../data/sessions";
 import { muscleName } from "../data/muscles";
-import { levelLabel, placeLabel } from "../lib/format";
+import { gearLabel, levelLabel, placeLabel } from "../lib/format";
 import { Figure } from "../ui/Figure";
 import { Icon } from "../ui/icons";
 import { MuscleMap } from "../ui/MuscleMap";
@@ -17,7 +17,7 @@ export function ExerciseScreen({ exercise, onBack }: { exercise: Exercise; onBac
       </div>
       <div className="figure-box"><Figure pose={exercise.pose} animate /></div>
       <p>{exercise.summary}</p>
-      <p className="muted small">{levelLabel(exercise.level)} · {placeLabel(exercise.place)} · {exercise.side === "ensidig" ? "Ett intervall per side" : exercise.side === "annenhver" ? "Bytt side halvveis" : "Begge sider samtidig"}</p>
+      <p className="muted small">{levelLabel(exercise.level)} · {placeLabel(exercise.place)} · {gearLabel(exercise.gear)} · {exercise.side === "ensidig" ? "Ett intervall per side" : exercise.side === "annenhver" ? "Bytt side halvveis" : "Begge sider samtidig"}</p>
       <ol className="stack">
         {exercise.steps.map((step) => <li key={step}>{step}</li>)}
       </ol>

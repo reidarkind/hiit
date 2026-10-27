@@ -1,9 +1,5 @@
 import { PAGES_URL } from "./constants";
 
-export function codeLink(code: string): string {
-  return `${PAGES_URL}#k=${code}`;
-}
-
 export function shareMessage(input: {
   kind: "D" | "U" | "G" | "S";
   name: string;
@@ -12,18 +8,11 @@ export function shareMessage(input: {
 }): string {
   const who = input.name.trim();
   const subject = who || "Jeg";
-  const link = codeLink(input.code);
   const lines: Record<typeof input.kind, string> = {
-    D: `${subject} deler økten «${input.sessionName}» i HIIT.`,
-    U: `${subject} utfordrer deg til «${input.sessionName}» i HIIT.`,
+    D: `${subject} deler økten «${input.sessionName}».`,
+    U: `${subject} utfordrer deg til «${input.sessionName}».`,
     G: `${subject} har gjennomført «${input.sessionName}» i dag.`,
     S: `${subject} har tatt utfordringen «${input.sessionName}».`,
   };
-  const tail: Record<typeof input.kind, string> = {
-    D: "Lim inn koden i appen:",
-    U: "Legg inn koden, gjennomfør, og send svar:",
-    G: "Legg inn koden i HIIT om dere har par-streak:",
-    S: "Legg inn svaret i HIIT:",
-  };
-  return `${lines[input.kind]}\n${tail[input.kind]}\n${input.code}\n${link}`;
+  return `${lines[input.kind]}\nHer er appen: ${PAGES_URL}\nÅpne den, trykk «Legg inn en kode» på forsiden, og lim inn:\n${input.code}`;
 }

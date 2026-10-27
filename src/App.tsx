@@ -8,6 +8,7 @@ import { assess } from "./lib/complete";
 import { todayIso } from "./lib/dates";
 import { expandSession } from "./lib/expand";
 import { randomId } from "./lib/id";
+import { setWeekday, toggleFavorite } from "./lib/plan";
 import { shareMessage } from "./lib/sms";
 import { addCompletion, applyDecoded } from "./lib/social";
 import { STORAGE_KEY } from "./lib/constants";
@@ -22,6 +23,7 @@ import { HomeScreen } from "./screens/HomeScreen";
 import { LibraryScreen } from "./screens/LibraryScreen";
 import { PlayerScreen } from "./screens/PlayerScreen";
 import { ProgressScreen } from "./screens/ProgressScreen";
+import { PlanScreen } from "./screens/PlanScreen";
 import { SessionScreen } from "./screens/SessionScreen";
 import { SessionsScreen } from "./screens/SessionsScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
@@ -38,7 +40,15 @@ type Route =
   | { name: "done"; completion: Completion; beforeBadges: string[]; previousStreak: number }
   | { name: "progress" }
   | { name: "settings" }
-  | { name: "code"; initial: string };
+  | { name: "plan" }
+  | { name: "code"; initial: string; back?: "home" | "progress" };
+
+const SHARE_TITLE = {
+  D: "Del økten",
+  U: "Utfordre",
+  G: "Del gjennomføring",
+  S: "Svar på utfordringen",
+} as const;
 
 type UpdateFn = (reload?: boolean) => Promise<void>;
 
@@ -54,7 +64,7 @@ export function App() {
   const [state, setState] = useState(initial);
   const [route, setRoute] = useState<Route>({ name: "home" });
   const [now, setNow] = useState(() => new Date());
-  const [draft, setDraft] = useState<string | null>(null);
+  const [draft, setDraft] = useState<{ title: string; text: string } | null>(null);
   const [notice, setNotice] = useState<{ text: string; tone: "good" | "warn" } | null>(null);
   const [update, setUpdate] = useState<UpdateFn | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
@@ -113,7 +123,10 @@ export function App() {
       },
       (id) => exerciseById(id)?.code ?? "",
     );
-    setDraft(shareMessage({ kind, name: state.profile.name, sessionName: session.name, code }));
+    setDraft({
+      title: SHARE_TITLE[kind],
+      text: shareMessage({ kind, name: state.profile.name, sessionName: session.name, code }),
+    });
     setState((current) => ({ ...current, shared: true }));
   }
 
@@ -150,7 +163,8 @@ export function App() {
         onStart={(id) => setRoute({ name: "player", id, rounds: 1 })}
         onOpen={(id) => setRoute({ name: "session", id })}
         onSettings={() => setRoute({ name: "settings" })}
-        onCode={() => setRoute({ name: "code", initial: "" })}
+        onCode={() => setRoute({ name: "code", initial: "", back: "home" })}
+        onPlan={() => setRoute({ name: "plan" })}
       />
     );
   } else if (route.name === "sessions") {
@@ -160,10 +174,12 @@ export function App() {
     screen = session ? (
       <SessionScreen
         session={session}
+        favorite={state.favorites.includes(session.id)}
         onBack={() => setRoute({ name: "sessions" })}
         onStart={(rounds) => setRoute({ name: "player", id: session.id, rounds })}
         onShare={() => openShare("D", session)}
         onChallenge={() => openShare("U", session)}
+        onFavorite={() => setState((current) => ({ ...current, favorites: toggleFavorite(current.favorites, session.id) }))}
         onEdit={() => setRoute({ name: "builder", id: session.id })}
         onCopy={() => {
           const copy = variant(session);
@@ -175,6 +191,8 @@ export function App() {
             ...current,
             customSessions: current.customSessions.filter((item) => item.id !== session.id),
             receivedSessions: current.receivedSessions.filter((item) => item.id !== session.id),
+            favorites: current.favorites.filter((id) => id !== session.id),
+            planWeek: current.planWeek.map((id) => (id === session.id ? null : id)),
           }));
           setRoute({ name: "sessions" });
         }}
@@ -236,7 +254,7 @@ export function App() {
         state={state}
         today={today}
         nowMinutes={now.getHours() * 60 + now.getMinutes()}
-        onCode={() => setRoute({ name: "code", initial: "" })}
+        onCode={() => setRoute({ name: "code", initial: "", back: "progress" })}
         onRename={(id, name) => setState((current) => ({
           ...current,
           partners: current.partners.map((partner) => (partner.id === id ? { ...partner, name } : partner)),
@@ -273,11 +291,19 @@ export function App() {
         }}
       />
     );
+  } else if (route.name === "plan") {
+    screen = (
+      <PlanScreen
+        state={state}
+        onBack={() => setRoute({ name: "home" })}
+        onSet={(index, sessionId) => setState((current) => ({ ...current, planWeek: setWeekday(current.planWeek, index, sessionId) }))}
+      />
+    );
   } else {
     screen = (
       <CodeScreen
         initial={route.initial}
-        onBack={() => setRoute({ name: "progress" })}
+        onBack={() => setRoute(route.back === "home" ? { name: "home" } : { name: "progress" })}
         onApply={(decoded) => {
           const applied = applyDecoded(state, decoded, today, new Date().toISOString());
           setState(applied.state);
@@ -310,7 +336,7 @@ export function App() {
           <NavButton icon="chart" label="Fremgang" on={tab === "progress"} onClick={() => setRoute({ name: "progress" })} />
         </nav>
       ) : null}
-      {draft ? <ShareSheet text={draft} onClose={() => setDraft(null)} /> : null}
+      {draft ? <ShareSheet title={draft.title} text={draft.text} onClose={() => setDraft(null)} /> : null}
       {update ? (
         <div className="update card between">
           <span>Ny versjon. Trykk for å laste inn.</span>
@@ -330,11 +356,11 @@ function NavButton({ icon, label, on, onClick }: { icon: IconName; label: string
   );
 }
 
-function ShareSheet({ text, onClose }: { text: string; onClose: () => void }) {
+function ShareSheet({ title, text, onClose }: { title: string; text: string; onClose: () => void }) {
   return (
     <div className="sheet">
       <div className="card stack">
-        <h2>Send</h2>
+        <h2>{title}</h2>
         <textarea readOnly rows={7} value={text} />
         <a className="btn block" href={`sms:?&body=${encodeURIComponent(text)}`}>Åpne meldinger</a>
         <button

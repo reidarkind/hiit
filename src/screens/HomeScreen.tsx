@@ -1,10 +1,11 @@
-import type { AppState } from "../types";
-import { builtinById } from "../data/sessions";
+import type { AppState, Session } from "../types";
+import { builtinById, findSession } from "../data/sessions";
 import { mustExercise } from "../data/exercises";
 import { greeting, weekDates, weekdayLetters } from "../lib/dates";
 import { formatDuration } from "../lib/format";
 import { expandSession, stepSeconds } from "../lib/expand";
 import { levelFor, totalXp } from "../lib/level";
+import { plannedSessionId } from "../lib/plan";
 import { countingDates, morningStreak, riskFromHour, streakCount } from "../lib/streak";
 import { suggestId } from "../lib/suggest";
 import { daysFromEpoch } from "../lib/dates";
@@ -21,6 +22,7 @@ export function HomeScreen({
   onOpen,
   onSettings,
   onCode,
+  onPlan,
 }: {
   state: AppState;
   today: string;
@@ -31,6 +33,7 @@ export function HomeScreen({
   onOpen: (id: string) => void;
   onSettings: () => void;
   onCode: () => void;
+  onPlan: () => void;
 }) {
   const dates = countingDates(state.history);
   const trainedToday = dates.includes(today);
@@ -40,7 +43,12 @@ export function HomeScreen({
   const bird = morningStreak([...new Set(mornings)], today, now.getHours() * 60 + now.getMinutes(), cutoff);
   const level = levelFor(totalXp(state.history));
   const suggestion = builtinById(suggestId({ trainedToday, hour: now.getHours(), dayIndex: daysFromEpoch(today, EPOCH) }))!;
-  const seconds = stepSeconds(expandSession(suggestion, mustExercise));
+  const planned = findSession(state, plannedSessionId(state.planWeek, today) ?? "");
+  const featured = planned ?? suggestion;
+  const seconds = stepSeconds(expandSession(featured, mustExercise));
+  const favorites = state.favorites
+    .map((id) => findSession(state, id))
+    .filter((session): session is Session => session !== undefined && session.id !== featured.id);
   const week = weekDates(today);
   const letters = weekdayLetters();
   const risk = !trainedToday && streak > 0 && now.getHours() >= riskFromHour(state.profile.reminderHour);
@@ -92,15 +100,29 @@ export function HomeScreen({
       ) : null}
 
       <section className="card stack">
-        <p className="eyebrow">{trainedToday ? "En økt til" : "Foreslått"}</p>
+        <p className="eyebrow">{planned ? "I dag" : trainedToday ? "En økt til" : "Foreslått"}</p>
         <div className="between">
-          <h2>{suggestion.name}</h2>
+          <h2>{featured.name}</h2>
           <span className="pill">{formatDuration(seconds)}</span>
         </div>
-        <p className="muted">{suggestion.summary}</p>
-        <button className="btn block" onClick={() => onStart(suggestion.id)}><Icon name="play" /> Start</button>
-        <button className="textbtn" onClick={() => onOpen(suggestion.id)}>Se økten</button>
+        <p className="muted">{featured.summary}</p>
+        <button className="btn block" onClick={() => onStart(featured.id)}><Icon name="play" /> Start</button>
+        <button className="textbtn" onClick={() => onOpen(featured.id)}>Se økten</button>
       </section>
+
+      {favorites.length > 0 ? (
+        <section className="card stack">
+          <h2>Favoritter</h2>
+          <div className="quick-list">
+            {favorites.map((session) => (
+              <div key={session.id} className="quick-row">
+                <button className="textbtn" onClick={() => onOpen(session.id)}>{session.name}</button>
+                <button className="btn" onClick={() => onStart(session.id)}><Icon name="play" /> Start</button>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="card stack">
         <div className="between">
@@ -114,8 +136,9 @@ export function HomeScreen({
             </div>
           ))}
         </div>
-        <button className="textbtn" onClick={onCode}>Legg inn en kode</button>
       </section>
+      <button className="btn ghost block" onClick={onPlan}>Ukeplan</button>
+      <button className="btn ghost block" onClick={onCode}>Legg inn en kode</button>
     </div>
   );
 }

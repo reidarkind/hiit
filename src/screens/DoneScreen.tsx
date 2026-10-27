@@ -47,7 +47,7 @@ export function DoneScreen({
       ) : null}
       <MuscleMap weights={Object.fromEntries(completion.muscles.map((muscle) => [muscle.id, muscle.weight]))} />
       <button className="btn block" onClick={onShare}><Icon name="share" /> Del gjennomføring</button>
-      {challenge ? <button className="btn soft block" onClick={() => onReply(challenge.id)}>Svar {challenge.sessionName}</button> : null}
+      {challenge ? <button className="btn soft block" onClick={() => onReply(challenge.id)}>Svar på utfordringen</button> : null}
       <button className="btn ghost block" onClick={onHome}>Hjem</button>
     </div>
   );

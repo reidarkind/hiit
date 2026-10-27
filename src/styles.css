@@ -217,6 +217,9 @@ a.btn { text-decoration: none; }
 .week i.on { background: var(--teal); color: white; }
 .week i.today { outline: 2px solid var(--ink); }
 .week i.freeze { background: #c9d7e8; }
+.quick-list { max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.quick-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.quick-row .btn { min-height: 40px; }
 
 .figure { width: 100%; height: auto; display: block; }
 .figure-box { background: linear-gradient(#f7f3ea, #efe6d6); border-radius: 20px; padding: 8px; }
@@ -230,7 +233,7 @@ a.btn { text-decoration: none; }
 .muscle-names li.hot { background: var(--coral-soft); color: #8a2e16; }
 
 .field { display: flex; flex-direction: column; gap: 6px; }
-.field input, .field textarea, textarea {
+.field input, .field textarea, .field select, textarea, select {
   width: 100%;
   border: 1px solid var(--line);
   background: white;

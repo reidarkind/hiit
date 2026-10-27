@@ -21,7 +21,8 @@ export type IconName =
   | "trash"
   | "up"
   | "down"
-  | "body";
+  | "body"
+  | "star";
 
 const PATHS: Record<IconName, string> = {
   home: "M4 11.5 12 4l8 7.5V20H4z M10 20v-6h4v6",
@@ -47,12 +48,13 @@ const PATHS: Record<IconName, string> = {
   up: "M6 14l6-6 6 6",
   down: "M6 10l6 6 6-6",
   body: "M12 4a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM12 8v6M8 11l4-1 4 1M9 20l3-6 3 6",
+  star: "M12 3.5 14.4 9.2 20.4 9.6 15.7 13.6 17.2 19.6 12 16.4 6.8 19.6 8.3 13.6 3.6 9.6 9.6 9.2z",
 };
 
-export function Icon({ name, size = 22 }: { name: IconName; size?: number }) {
+export function Icon({ name, size = 22, filled = false }: { name: IconName; size?: number; filled?: boolean }) {
   const extra = name === "sliders" ? "M8 6v4M16 14v4" : "";
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d={PATHS[name]} />
       {extra ? <path d={extra} /> : null}
     </svg>

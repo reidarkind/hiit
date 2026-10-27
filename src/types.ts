@@ -33,6 +33,10 @@ export type SideMode = "begge" | "ensidig" | "annenhver";
 export type Place = "gulv" | "staende" | "ute";
 export type Format = "ovelse" | "intervall";
 export type SideName = "venstre" | "hoyre" | "begge";
+export type Gear = "ingen" | "stol" | "vekter" | "ball" | "strikk";
+export type StickProp =
+  | { kind: "stol" | "ball"; x: number; y: number; w: number; h: number }
+  | { kind: "strikk" | "vekter" };
 
 export type Pt = [number, number];
 
@@ -54,6 +58,7 @@ export type StickPose = {
   a: Stick;
   b: Stick;
   face: "side" | "front";
+  prop?: StickProp;
 };
 
 export type Exercise = {
@@ -72,6 +77,7 @@ export type Exercise = {
   primary: MuscleId[];
   secondary: MuscleId[];
   pose: StickPose;
+  gear: Gear;
 };
 
 export type Block = {
@@ -170,4 +176,6 @@ export type AppState = {
   partners: Partner[];
   challenges: Challenge[];
   reminderDate: string | null;
+  favorites: string[];
+  planWeek: (string | null)[];
 };

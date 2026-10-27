@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { mustExercise } from "../data/exercises";
 import { builtinById } from "../data/sessions";
 import { expandSession, stepSeconds } from "./expand";
-import { lengthBand, sessionIntensity, sessionKind } from "./sessionMeta";
+import { lengthBand, sessionGears, sessionIntensity, sessionKind } from "./sessionMeta";
 
 describe("øktfilter", () => {
   it("skiller kort, vanlig og lang", () => {
@@ -23,5 +23,10 @@ describe("øktfilter", () => {
     expect(sessionIntensity(builtinById("NX14")!, get)).toBe("krevende");
     expect(lengthBand(stepSeconds(expandSession(builtinById("NX44")!, get)))).toBe("lang");
     expect(lengthBand(stepSeconds(expandSession(builtinById("KL7")!, get)))).toBe("kort");
+    expect(sessionGears(builtinById("KL7")!, get)).toEqual([]);
+    expect(sessionGears(builtinById("STOL")!, get)).toEqual(["stol"]);
+    expect(sessionGears(builtinById("VEKT")!, get)).toEqual(["vekter"]);
+    expect(sessionGears(builtinById("BALL")!, get)).toEqual(["ball"]);
+    expect(sessionGears(builtinById("STRK")!, get)).toEqual(["strikk"]);
   });
 });

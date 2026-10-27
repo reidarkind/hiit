@@ -10,19 +10,23 @@ import { MuscleMap } from "../ui/MuscleMap";
 
 export function SessionScreen({
   session,
+  favorite,
   onBack,
   onStart,
   onShare,
   onChallenge,
+  onFavorite,
   onEdit,
   onCopy,
   onDelete,
 }: {
   session: Session;
+  favorite: boolean;
   onBack: () => void;
   onStart: (rounds: number) => void;
   onShare: () => void;
   onChallenge: () => void;
+  onFavorite: () => void;
   onEdit: () => void;
   onCopy: () => void;
   onDelete: () => void;
@@ -37,7 +41,12 @@ export function SessionScreen({
       <div className="topbar">
         <button className="iconbtn" onClick={onBack} aria-label="Tilbake"><Icon name="back" /></button>
         <h1>{session.name}</h1>
-        <span className="pill">{levelLabel(level)}</span>
+        <span className="row">
+          <button className="iconbtn" aria-pressed={favorite} aria-label={favorite ? "Fjern favoritt" : "Merk som favoritt"} onClick={onFavorite}>
+            <Icon name="star" filled={favorite} />
+          </button>
+          <span className="pill">{levelLabel(level)}</span>
+        </span>
       </div>
       <p>{session.summary}</p>
       <p className="muted">{session.about}</p>
@@ -71,7 +80,7 @@ export function SessionScreen({
       </ol>
       <button className="btn block" onClick={() => onStart(rounds)}><Icon name="play" /> Start</button>
       <div className="btn-row">
-        <button className="btn ghost" onClick={onShare}><Icon name="share" /> Del</button>
+        <button className="btn ghost" onClick={onShare}><Icon name="share" /> Del økten</button>
         <button className="btn ghost" onClick={onChallenge}>Utfordre</button>
       </div>
       <div className="btn-row">

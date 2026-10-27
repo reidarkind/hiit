@@ -1,4 +1,4 @@
-import type { Exercise, Level, Session } from "../types";
+import type { Exercise, Gear, Level, Session } from "../types";
 import { expandSession, sessionLevel, workSteps } from "./expand";
 
 export type SessionKind = "sirkel" | "kjerne" | "ute";
@@ -24,7 +24,21 @@ const FEEL: Record<string, Level> = {
   RUTE: "middels",
   LUFT: "lett",
   SAMT: "lett",
+  ST7: "krevende",
+  STOL: "middels",
+  VEKT: "middels",
+  BALL: "lett",
+  STRK: "middels",
 };
+
+export function sessionGears(session: Session, get: (id: string) => Exercise): Gear[] {
+  const found = new Set<Gear>();
+  for (const block of session.blocks) {
+    const gear = get(block.exerciseId).gear;
+    if (gear !== "ingen") found.add(gear);
+  }
+  return [...found];
+}
 
 export function sessionIntensity(session: Session, get: (id: string) => Exercise): Level {
   if (session.builtin && FEEL[session.id]) return FEEL[session.id];

@@ -1,6 +1,6 @@
 # HIIT
 
-Norsk PWA for kroppsvekt og enkle løpeintervaller. Ingen vekter, ingen konto, ingen backend. Vite + React + TypeScript + Vitest. Publiseres til GitHub Pages på `/hiit/`.
+Norsk PWA for kroppsvekt, enkle hjelpemidler (stol, håndvekter, pilatesball, strikk) og løpeintervaller. Ingen konto, ingen backend. Vite + React + TypeScript + Vitest. Publiseres til GitHub Pages på `/hiit/`.
 
 ## Kommandoer
 
@@ -23,7 +23,7 @@ npm run build
 - `src/pwa.ts` — service worker-oppdatering og `storage.persist`.
 - localStorage-nøkkel: `hiit-v1`.
 
-Øktlogikk skal kunne testes uten DOM. Nye øvelser legges i `src/data/exercises.ts` med en kode på to bokstaver (ikke I, O, 0 eller 1) og en positur i `src/data/sticks.ts`.
+Øktlogikk skal kunne testes uten DOM. Nye øvelser legges i `src/data/exercises.ts` med en kode på to bokstaver (ikke I, O, 0 eller 1), `gear` (`ingen`, `stol`, `vekter`, `ball` eller `strikk`) og en positur i `src/data/sticks.ts`. Favoritter og ukeplan ligger på `AppState` (`favorites`, `planWeek` med mandag som indeks 0). SMS-lenken peker bare på appen. Koden skrives inn via «Legg inn en kode».
 
 ## Regler
 

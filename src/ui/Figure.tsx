@@ -3,7 +3,7 @@ import type { Stick, StickPose } from "../types";
 import { mixStick } from "../data/sticks";
 
 const NEAR = "#322b26";
-const FAR = "#d9cbb8";
+const FAR = "#8a7b68";
 const SKIN = "#f1c7a2";
 const HOT = "#d4532b";
 
@@ -49,20 +49,21 @@ export function Figure({
     <svg viewBox="0 0 200 240" className="figure" role="img" aria-hidden="true">
       <ellipse cx={ground} cy="226" rx="34" ry="5" fill="#000" opacity="0.08" />
       <g transform={mirror ? "translate(200 0) scale(-1 1)" : undefined}>
+        {pose.prop?.kind === "stol" ? (
+          <rect x={pose.prop.x} y={pose.prop.y} width={pose.prop.w} height={pose.prop.h} rx="4" fill="#c4b39a" stroke="#8c7358" strokeWidth="2" />
+        ) : null}
+        {pose.prop?.kind === "ball" ? (
+          <ellipse cx={pose.prop.x + pose.prop.w / 2} cy={pose.prop.y + pose.prop.h / 2} rx={pose.prop.w / 2} ry={pose.prop.h / 2} fill="#d7efe9" stroke="#0f6e66" strokeWidth="2" />
+        ) : null}
         <Line a={stick.hip} b={stick.knee2} color={FAR} width={12} />
         <Line a={stick.knee2} b={stick.ankle2} color={FAR} width={9} />
         <Line a={stick.shoulder} b={stick.elbow2} color={FAR} width={9} />
         <Line a={stick.elbow2} b={stick.wrist2} color={FAR} width={7} />
+        <Joint at={stick.wrist2} color={FAR} r={4} />
         <Line a={stick.hip} b={stick.shoulder} color={NEAR} width={16} />
         <Line a={stick.shoulder} b={stick.head} color={NEAR} width={8} />
-        <Line a={stick.hip} b={stick.knee} color={near} width={14} />
-        <Line a={stick.knee} b={stick.ankle} color={near} width={10} />
-        <Line a={stick.shoulder} b={stick.elbow} color={near} width={11} />
-        <Line a={stick.elbow} b={stick.wrist} color={near} width={8} />
         <Joint at={stick.hip} color={NEAR} r={7} />
         <Joint at={stick.shoulder} color={NEAR} r={6} />
-        <Joint at={stick.knee} color={near} r={5} />
-        <Joint at={stick.ankle} color={near} r={4} />
         <circle cx={stick.head[0]} cy={stick.head[1]} r="15" fill={SKIN} stroke={NEAR} strokeWidth="2" />
         {pose.face === "front" ? (
           <>
@@ -77,6 +78,22 @@ export function Figure({
             <path d={`M ${stick.head[0] + 12} ${stick.head[1] + 1} l 7 2`} stroke={NEAR} strokeWidth="2" strokeLinecap="round" />
           </>
         )}
+        <Line a={stick.hip} b={stick.knee} color={near} width={14} />
+        <Line a={stick.knee} b={stick.ankle} color={near} width={10} />
+        <Line a={stick.shoulder} b={stick.elbow} color={near} width={11} />
+        <Line a={stick.elbow} b={stick.wrist} color={near} width={8} />
+        <Joint at={stick.knee} color={near} r={5} />
+        <Joint at={stick.ankle} color={near} r={4} />
+        <Joint at={stick.wrist} color={near} r={4.5} />
+        {pose.prop?.kind === "strikk" ? (
+          <line x1={stick.wrist2[0]} y1={stick.wrist2[1]} x2={stick.wrist[0]} y2={stick.wrist[1]} stroke="#d4532b" strokeWidth="3" strokeLinecap="round" />
+        ) : null}
+        {pose.prop?.kind === "vekter" ? (
+          <>
+            <circle cx={stick.wrist2[0]} cy={stick.wrist2[1]} r="6" fill="#8a8178" />
+            <circle cx={stick.wrist[0]} cy={stick.wrist[1]} r="7" fill="#5e564c" />
+          </>
+        ) : null}
       </g>
     </svg>
   );

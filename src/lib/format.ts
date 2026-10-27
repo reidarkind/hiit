@@ -25,6 +25,14 @@ export function levelLabel(level: "lett" | "middels" | "krevende"): string {
   return "Krevende";
 }
 
+export function gearLabel(gear: "ingen" | "stol" | "vekter" | "ball" | "strikk"): string {
+  if (gear === "stol") return "Stol eller krakk";
+  if (gear === "vekter") return "Håndvekter";
+  if (gear === "ball") return "Pilatesball";
+  if (gear === "strikk") return "Strikk";
+  return "Uten utstyr";
+}
+
 export function placeLabel(place: "gulv" | "staende" | "ute"): string {
   if (place === "gulv") return "Gulv";
   if (place === "staende") return "Stående";

@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
-import type { AppState, Level, Session } from "../types";
+import type { AppState, Gear, Level, Session } from "../types";
 import { allSessions } from "../data/sessions";
 import { mustExercise } from "../data/exercises";
 import { expandSession, stepSeconds } from "../lib/expand";
-import { formatDuration, levelLabel } from "../lib/format";
-import { lengthBand, sessionIntensity, sessionKind, type LengthBand, type SessionKind } from "../lib/sessionMeta";
+import { formatDuration, gearLabel, levelLabel } from "../lib/format";
+import { lengthBand, sessionGears, sessionIntensity, sessionKind, type LengthBand, type SessionKind } from "../lib/sessionMeta";
 import { Icon } from "../ui/icons";
 
 const INTENSITY: { id: "alle" | Level; label: string }[] = [
@@ -28,11 +28,21 @@ const LENGTHS: { id: "alle" | LengthBand; label: string }[] = [
   { id: "lang", label: "Over 25 min" },
 ];
 
+const GEARS: { id: "alle" | "uten" | Gear; label: string }[] = [
+  { id: "alle", label: "Alle" },
+  { id: "uten", label: "Uten utstyr" },
+  { id: "stol", label: "Stol eller krakk" },
+  { id: "vekter", label: "Håndvekter" },
+  { id: "ball", label: "Pilatesball" },
+  { id: "strikk", label: "Strikk" },
+];
+
 export function SessionsScreen({ state, onOpen, onCreate }: { state: AppState; onOpen: (id: string) => void; onCreate: () => void }) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [intensity, setIntensity] = useState<(typeof INTENSITY)[number]["id"]>("alle");
   const [kind, setKind] = useState<(typeof KINDS)[number]["id"]>("alle");
   const [length, setLength] = useState<(typeof LENGTHS)[number]["id"]>("alle");
+  const [gear, setGear] = useState<(typeof GEARS)[number]["id"]>("alle");
   const described = useMemo(() => {
     return allSessions(state).map((session) => {
       const seconds = stepSeconds(expandSession(session, mustExercise));
@@ -42,13 +52,15 @@ export function SessionsScreen({ state, onOpen, onCreate }: { state: AppState; o
         intensity: sessionIntensity(session, mustExercise),
         kind: sessionKind(session, mustExercise),
         length: lengthBand(seconds),
+        gears: sessionGears(session, mustExercise),
       };
     });
   }, [state]);
   const visible = described.filter((item) =>
     (intensity === "alle" || item.intensity === intensity)
     && (kind === "alle" || item.kind === kind)
-    && (length === "alle" || item.length === length),
+    && (length === "alle" || item.length === length)
+    && (gear === "alle" || (gear === "uten" ? item.gears.length === 0 : item.gears.includes(gear))),
   );
   const groups: { title: string; owned: Session[]; items: typeof visible }[] = [
     { title: "Ferdige økter", owned: described.filter((item) => item.session.builtin).map((item) => item.session), items: visible.filter((item) => item.session.builtin) },
@@ -62,7 +74,7 @@ export function SessionsScreen({ state, onOpen, onCreate }: { state: AppState; o
         <button className="btn" onClick={onCreate}><Icon name="plus" /> Ny</button>
       </div>
       <button className="btn ghost block" aria-expanded={filtersOpen} onClick={() => setFiltersOpen((open) => !open)}>
-        Filter{filterSummary(intensity, kind, length)}
+        Filter{filterSummary(intensity, kind, length, gear)}
         <Icon name={filtersOpen ? "up" : "down"} size={18} />
       </button>
       {filtersOpen ? (
@@ -70,6 +82,7 @@ export function SessionsScreen({ state, onOpen, onCreate }: { state: AppState; o
           <FilterRow label="Intensitet" options={INTENSITY} value={intensity} onChange={setIntensity} />
           <FilterRow label="Type" options={KINDS} value={kind} onChange={setKind} />
           <FilterRow label="Lengde" options={LENGTHS} value={length} onChange={setLength} />
+          <FilterRow label="Utstyr" options={GEARS} value={gear} onChange={setGear} />
         </div>
       ) : null}
       {groups.map((group) => (
@@ -84,7 +97,7 @@ export function SessionsScreen({ state, onOpen, onCreate }: { state: AppState; o
                 <span className="pill">{formatDuration(item.seconds)}</span>
               </div>
               <p className="muted small">{item.session.summary}</p>
-              <p className="small">{levelLabel(item.intensity)} · {kindLabel(item.kind)}</p>
+              <p className="small">{levelLabel(item.intensity)} · {kindLabel(item.kind)}{item.gears.length ? ` · ${item.gears.map(gearLabel).join(", ")}` : ""}</p>
             </button>
           ))}
         </section>
@@ -123,11 +136,17 @@ function FilterRow<T extends string>({
   );
 }
 
-function filterSummary(intensity: (typeof INTENSITY)[number]["id"], kind: (typeof KINDS)[number]["id"], length: (typeof LENGTHS)[number]["id"]): string {
+function filterSummary(
+  intensity: (typeof INTENSITY)[number]["id"],
+  kind: (typeof KINDS)[number]["id"],
+  length: (typeof LENGTHS)[number]["id"],
+  gear: (typeof GEARS)[number]["id"],
+): string {
   const parts = [
     intensity === "alle" ? "" : INTENSITY.find((item) => item.id === intensity)?.label,
     kind === "alle" ? "" : KINDS.find((item) => item.id === kind)?.label,
     length === "alle" ? "" : LENGTHS.find((item) => item.id === length)?.label,
+    gear === "alle" ? "" : GEARS.find((item) => item.id === gear)?.label,
   ].filter(Boolean);
   return parts.length ? ` · ${parts.join(" · ")}` : "";
 }
