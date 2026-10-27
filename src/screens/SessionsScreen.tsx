@@ -28,8 +28,14 @@ const LENGTHS: { id: "alle" | LengthBand; label: string }[] = [
   { id: "lang", label: "Over 25 min" },
 ];
 
-const GEARS: { id: "alle" | "uten" | Gear; label: string }[] = [
+const FAVORITES: { id: "alle" | "favoritt"; label: string }[] = [
   { id: "alle", label: "Alle" },
+  { id: "favoritt", label: "Favoritter" },
+];
+
+type GearChoice = "uten" | Gear;
+
+const GEARS: { id: GearChoice; label: string }[] = [
   { id: "uten", label: "Uten utstyr" },
   { id: "stol", label: "Stol eller krakk" },
   { id: "vekter", label: "Håndvekter" },
@@ -37,12 +43,23 @@ const GEARS: { id: "alle" | "uten" | Gear; label: string }[] = [
   { id: "strikk", label: "Strikk" },
 ];
 
-export function SessionsScreen({ state, onOpen, onCreate }: { state: AppState; onOpen: (id: string) => void; onCreate: () => void }) {
+export function SessionsScreen({
+  state,
+  onOpen,
+  onCreate,
+  onFavorite,
+}: {
+  state: AppState;
+  onOpen: (id: string) => void;
+  onCreate: () => void;
+  onFavorite: (id: string) => void;
+}) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [intensity, setIntensity] = useState<(typeof INTENSITY)[number]["id"]>("alle");
   const [kind, setKind] = useState<(typeof KINDS)[number]["id"]>("alle");
   const [length, setLength] = useState<(typeof LENGTHS)[number]["id"]>("alle");
-  const [gear, setGear] = useState<(typeof GEARS)[number]["id"]>("alle");
+  const [gears, setGears] = useState<GearChoice[]>([]);
+  const [favorite, setFavorite] = useState<(typeof FAVORITES)[number]["id"]>("alle");
   const described = useMemo(() => {
     return allSessions(state).map((session) => {
       const seconds = stepSeconds(expandSession(session, mustExercise));
@@ -60,7 +77,8 @@ export function SessionsScreen({ state, onOpen, onCreate }: { state: AppState; o
     (intensity === "alle" || item.intensity === intensity)
     && (kind === "alle" || item.kind === kind)
     && (length === "alle" || item.length === length)
-    && (gear === "alle" || (gear === "uten" ? item.gears.length === 0 : item.gears.includes(gear))),
+    && matchesGear(item.gears, gears)
+    && (favorite === "alle" || state.favorites.includes(item.session.id)),
   );
   const groups: { title: string; owned: Session[]; items: typeof visible }[] = [
     { title: "Ferdige økter", owned: described.filter((item) => item.session.builtin).map((item) => item.session), items: visible.filter((item) => item.session.builtin) },
@@ -74,7 +92,7 @@ export function SessionsScreen({ state, onOpen, onCreate }: { state: AppState; o
         <button className="btn" onClick={onCreate}><Icon name="plus" /> Ny</button>
       </div>
       <button className="btn ghost block" aria-expanded={filtersOpen} onClick={() => setFiltersOpen((open) => !open)}>
-        Filter{filterSummary(intensity, kind, length, gear)}
+        Filter{filterSummary(intensity, kind, length, gears, favorite)}
         <Icon name={filtersOpen ? "up" : "down"} size={18} />
       </button>
       {filtersOpen ? (
@@ -82,7 +100,8 @@ export function SessionsScreen({ state, onOpen, onCreate }: { state: AppState; o
           <FilterRow label="Intensitet" options={INTENSITY} value={intensity} onChange={setIntensity} />
           <FilterRow label="Type" options={KINDS} value={kind} onChange={setKind} />
           <FilterRow label="Lengde" options={LENGTHS} value={length} onChange={setLength} />
-          <FilterRow label="Utstyr" options={GEARS} value={gear} onChange={setGear} />
+          <ToggleRow label="Utstyr" options={GEARS} values={gears} onToggle={(id) => setGears((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id])} />
+          <FilterRow label="Favoritt" options={FAVORITES} value={favorite} onChange={setFavorite} />
         </div>
       ) : null}
       {groups.map((group) => (
@@ -90,16 +109,33 @@ export function SessionsScreen({ state, onOpen, onCreate }: { state: AppState; o
           <h2>{group.title}</h2>
           {group.owned.length === 0 ? <p className="muted">Ingen her ennå.</p> : null}
           {group.owned.length > 0 && group.items.length === 0 ? <p className="muted">Ingen treff.</p> : null}
-          {group.items.map((item) => (
-            <button key={item.session.id} className="card" onClick={() => onOpen(item.session.id)} style={{ textAlign: "left" }}>
-              <div className="between">
-                <strong>{item.session.name}</strong>
-                <span className="pill">{formatDuration(item.seconds)}</span>
+          {group.items.map((item) => {
+            const loved = state.favorites.includes(item.session.id);
+            return (
+              <div key={item.session.id} className="card stack">
+                <div className="between">
+                  <button className="session-open" onClick={() => onOpen(item.session.id)}>
+                    <strong>{item.session.name}</strong>
+                  </button>
+                  <button
+                    className={loved ? "iconbtn loved" : "iconbtn"}
+                    aria-pressed={loved}
+                    aria-label={loved ? "Fjern favoritt" : "Merk som favoritt"}
+                    onClick={() => onFavorite(item.session.id)}
+                  >
+                    <Icon name="heart" filled={loved} />
+                  </button>
+                </div>
+                <button className="session-open" onClick={() => onOpen(item.session.id)}>
+                  <p className="muted small">{item.session.summary}</p>
+                  <span className="between" style={{ marginTop: 6 }}>
+                    <span className="small">{levelLabel(item.intensity)} · {kindLabel(item.kind)}{item.gears.length ? ` · ${item.gears.map(gearLabel).join(", ")}` : ""}</span>
+                    <span className="pill">{formatDuration(item.seconds)}</span>
+                  </span>
+                </button>
               </div>
-              <p className="muted small">{item.session.summary}</p>
-              <p className="small">{levelLabel(item.intensity)} · {kindLabel(item.kind)}{item.gears.length ? ` · ${item.gears.map(gearLabel).join(", ")}` : ""}</p>
-            </button>
-          ))}
+            );
+          })}
         </section>
       ))}
     </div>
@@ -136,17 +172,58 @@ function FilterRow<T extends string>({
   );
 }
 
+function ToggleRow<T extends string>({
+  label,
+  options,
+  values,
+  onToggle,
+}: {
+  label: string;
+  options: { id: T; label: string }[];
+  values: T[];
+  onToggle: (id: T) => void;
+}) {
+  return (
+    <div>
+      <p className="muted small">{label}</p>
+      <div className="chips" role="group" aria-label={label}>
+        {options.map((option) => {
+          const on = values.includes(option.id);
+          return (
+            <button
+              key={option.id}
+              className={on ? "chip on" : "chip"}
+              aria-pressed={on}
+              onClick={() => onToggle(option.id)}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function matchesGear(present: Gear[], selected: GearChoice[]): boolean {
+  if (selected.length === 0) return true;
+  return selected.some((choice) => choice === "uten" ? present.length === 0 : present.includes(choice));
+}
+
 function filterSummary(
   intensity: (typeof INTENSITY)[number]["id"],
   kind: (typeof KINDS)[number]["id"],
   length: (typeof LENGTHS)[number]["id"],
-  gear: (typeof GEARS)[number]["id"],
+  gears: GearChoice[],
+  favorite: (typeof FAVORITES)[number]["id"],
 ): string {
+  const gearLabels = GEARS.filter((item) => gears.includes(item.id)).map((item) => item.label);
   const parts = [
     intensity === "alle" ? "" : INTENSITY.find((item) => item.id === intensity)?.label,
     kind === "alle" ? "" : KINDS.find((item) => item.id === kind)?.label,
     length === "alle" ? "" : LENGTHS.find((item) => item.id === length)?.label,
-    gear === "alle" ? "" : GEARS.find((item) => item.id === gear)?.label,
+    gearLabels.join(", "),
+    favorite === "alle" ? "" : "Favoritter",
   ].filter(Boolean);
   return parts.length ? ` · ${parts.join(" · ")}` : "";
 }

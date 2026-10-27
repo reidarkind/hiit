@@ -42,8 +42,8 @@ export function SessionScreen({
         <button className="iconbtn" onClick={onBack} aria-label="Tilbake"><Icon name="back" /></button>
         <h1>{session.name}</h1>
         <span className="row">
-          <button className="iconbtn" aria-pressed={favorite} aria-label={favorite ? "Fjern favoritt" : "Merk som favoritt"} onClick={onFavorite}>
-            <Icon name="star" filled={favorite} />
+          <button className={favorite ? "iconbtn loved" : "iconbtn"} aria-pressed={favorite} aria-label={favorite ? "Fjern favoritt" : "Merk som favoritt"} onClick={onFavorite}>
+            <Icon name="heart" filled={favorite} />
           </button>
           <span className="pill">{levelLabel(level)}</span>
         </span>

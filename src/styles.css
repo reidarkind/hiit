@@ -60,6 +60,16 @@ ul { margin: 0; padding: 0; list-style: none; }
   background: var(--paper-2);
   border: 1px solid var(--line);
 }
+.iconbtn.loved { color: var(--coral); background: var(--coral-soft); border-color: transparent; }
+.session-open {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: inherit;
+}
 .stack { display: flex; flex-direction: column; gap: 12px; }
 .row { display: flex; align-items: center; gap: 10px; }
 .between { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
@@ -219,7 +229,9 @@ a.btn { text-decoration: none; }
 .week i.freeze { background: #c9d7e8; }
 .quick-list { max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
 .quick-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.quick-row .btn { min-height: 40px; }
+.quick-row .textbtn { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+.quick-row .btn-row { flex: 0 0 auto; }
+.quick-row .btn { min-height: 40px; padding: 0 12px; }
 
 .figure { width: 100%; height: auto; display: block; }
 .figure-box { background: linear-gradient(#f7f3ea, #efe6d6); border-radius: 20px; padding: 8px; }

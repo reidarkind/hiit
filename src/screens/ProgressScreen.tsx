@@ -13,13 +13,11 @@ export function ProgressScreen({
   state,
   today,
   nowMinutes,
-  onCode,
   onRename,
 }: {
   state: AppState;
   today: string;
   nowMinutes: number;
-  onCode: () => void;
   onRename: (id: string, name: string) => void;
 }) {
   const dates = countingDates(state.history);
@@ -69,8 +67,8 @@ export function ProgressScreen({
         </div>
       </section>
       <section className="stack">
-        <div className="between"><h2>Par</h2><button className="textbtn" onClick={onCode}>Legg inn kode</button></div>
-        {state.partners.length === 0 ? <p className="muted">Del en gjennomført økt. Når de sender sin kode tilbake, og du limer den inn, teller dagen på par-streaken.</p> : null}
+        <h2>Par</h2>
+        <p className="muted">Par-streaken teller når du har trent og limt inn den andres kode samme dag. Koden legger du inn fra forsiden.</p>
         {state.partners.map((partner) => (
           <PartnerRow key={partner.id} name={partner.name} streak={pairStreak(dates, partner.inboundDates, today)} onRename={(name) => onRename(partner.id, name)} />
         ))}

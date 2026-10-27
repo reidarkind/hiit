@@ -49,14 +49,28 @@ export function Figure({
     <svg viewBox="0 0 200 240" className="figure" role="img" aria-hidden="true">
       <ellipse cx={ground} cy="226" rx="34" ry="5" fill="#000" opacity="0.08" />
       <g transform={mirror ? "translate(200 0) scale(-1 1)" : undefined}>
+        {pose.wall ? (
+          <rect x={pose.wall.x} y={pose.wall.y} width={pose.wall.w} height={pose.wall.h} rx="2" fill="#e7e0d4" stroke="#c4b39a" strokeWidth="2" />
+        ) : null}
         {pose.prop?.kind === "stol" ? (
           <rect x={pose.prop.x} y={pose.prop.y} width={pose.prop.w} height={pose.prop.h} rx="4" fill="#c4b39a" stroke="#8c7358" strokeWidth="2" />
         ) : null}
         {pose.prop?.kind === "ball" ? (
-          <ellipse cx={pose.prop.x + pose.prop.w / 2} cy={pose.prop.y + pose.prop.h / 2} rx={pose.prop.w / 2} ry={pose.prop.h / 2} fill="#d7efe9" stroke="#0f6e66" strokeWidth="2" />
+          <>
+            <ellipse cx={pose.prop.x + pose.prop.w / 2} cy={pose.prop.y + pose.prop.h / 2} rx={pose.prop.w / 2} ry={pose.prop.h / 2} fill="#d7efe9" stroke="#0f6e66" strokeWidth="2" />
+            <ellipse cx={pose.prop.x + pose.prop.w * 0.34} cy={pose.prop.y + pose.prop.h * 0.3} rx={pose.prop.w * 0.12} ry={pose.prop.h * 0.08} fill="#fff" opacity="0.7" />
+          </>
         ) : null}
         <Line a={stick.hip} b={stick.knee2} color={FAR} width={12} />
         <Line a={stick.knee2} b={stick.ankle2} color={FAR} width={9} />
+        {pose.face === "front" ? (
+          <ellipse cx={stick.ankle2[0]} cy={Math.min(stick.ankle2[1] + 3, 222)} rx="8" ry="3.5" fill={FAR} />
+        ) : (
+          <>
+            <Line a={stick.ankle2} b={stick.toe2} color={FAR} width={8} />
+            <Joint at={stick.toe2} color={FAR} r={3.5} />
+          </>
+        )}
         <Line a={stick.shoulder} b={stick.elbow2} color={FAR} width={9} />
         <Line a={stick.elbow2} b={stick.wrist2} color={FAR} width={7} />
         <Joint at={stick.wrist2} color={FAR} r={4} />
@@ -80,6 +94,14 @@ export function Figure({
         )}
         <Line a={stick.hip} b={stick.knee} color={near} width={14} />
         <Line a={stick.knee} b={stick.ankle} color={near} width={10} />
+        {pose.face === "front" ? (
+          <ellipse cx={stick.ankle[0]} cy={Math.min(stick.ankle[1] + 3, 222)} rx="9" ry="4" fill={near} />
+        ) : (
+          <>
+            <Line a={stick.ankle} b={stick.toe} color={near} width={9} />
+            <Joint at={stick.toe} color={near} r={4} />
+          </>
+        )}
         <Line a={stick.shoulder} b={stick.elbow} color={near} width={11} />
         <Line a={stick.elbow} b={stick.wrist} color={near} width={8} />
         <Joint at={stick.knee} color={near} r={5} />

@@ -22,7 +22,7 @@ export type IconName =
   | "up"
   | "down"
   | "body"
-  | "star";
+  | "heart";
 
 const PATHS: Record<IconName, string> = {
   home: "M4 11.5 12 4l8 7.5V20H4z M10 20v-6h4v6",
@@ -48,7 +48,7 @@ const PATHS: Record<IconName, string> = {
   up: "M6 14l6-6 6 6",
   down: "M6 10l6 6 6-6",
   body: "M12 4a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM12 8v6M8 11l4-1 4 1M9 20l3-6 3 6",
-  star: "M12 3.5 14.4 9.2 20.4 9.6 15.7 13.6 17.2 19.6 12 16.4 6.8 19.6 8.3 13.6 3.6 9.6 9.6 9.2z",
+  heart: "M12 20.2 10.6 18.9C6.1 14.8 3.2 12.2 3.2 8.9 3.2 6.2 5.3 4.2 8 4.2c1.5 0 3 .7 4 1.8 1-1.1 2.5-1.8 4-1.8 2.7 0 4.8 2 4.8 4.7 0 3.3-2.9 5.9-7.4 10z",
 };
 
 export function Icon({ name, size = 22, filled = false }: { name: IconName; size?: number; filled?: boolean }) {

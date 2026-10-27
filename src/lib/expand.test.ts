@@ -64,6 +64,19 @@ describe("utvidelse av økt", () => {
     expect(workSteps(steps).filter((step) => step.exerciseId === "drag")).toHaveLength(4);
   });
 
+  it("kilometerdrag er fire drag på fem minutter, med jogg rundt", () => {
+    const steps = expandSession(builtinById("KILM")!, mustExercise);
+    expect(workSteps(steps).filter((step) => step.exerciseId === "kilometer")).toHaveLength(4);
+    expect(workSteps(steps).every((step) => step.exerciseId !== "drag")).toBe(true);
+    expect(stepSeconds(steps)).toBe(2070);
+  });
+
+  it("på ballen har de seks balløvelsene", () => {
+    const ids = builtinById("BALL")!.blocks.map((block) => block.exerciseId);
+    expect(ids).toEqual(["ball-kroll", "ball-bro", "ball-planke", "ball-rygg", "ball-knar", "ball-vegg"]);
+    expect(stepSeconds(expandSession(builtinById("BALL")!, mustExercise))).toBe(255);
+  });
+
   it("kjeder kondisjon når hvilen er null", () => {
     const steps = expandSession(builtinById("GAJO")!, mustExercise);
     expect(steps.every((step) => step.kind === "work")).toBe(true);

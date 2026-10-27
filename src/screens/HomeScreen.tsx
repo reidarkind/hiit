@@ -23,6 +23,7 @@ export function HomeScreen({
   onSettings,
   onCode,
   onPlan,
+  onChallenge,
 }: {
   state: AppState;
   today: string;
@@ -34,6 +35,7 @@ export function HomeScreen({
   onSettings: () => void;
   onCode: () => void;
   onPlan: () => void;
+  onChallenge: (id: string) => void;
 }) {
   const dates = countingDates(state.history);
   const trainedToday = dates.includes(today);
@@ -44,11 +46,11 @@ export function HomeScreen({
   const level = levelFor(totalXp(state.history));
   const suggestion = builtinById(suggestId({ trainedToday, hour: now.getHours(), dayIndex: daysFromEpoch(today, EPOCH) }))!;
   const planned = findSession(state, plannedSessionId(state.planWeek, today) ?? "");
-  const featured = planned ?? suggestion;
-  const seconds = stepSeconds(expandSession(featured, mustExercise));
-  const favorites = state.favorites
+  const saved = state.favorites
     .map((id) => findSession(state, id))
-    .filter((session): session is Session => session !== undefined && session.id !== featured.id);
+    .filter((session): session is Session => session !== undefined);
+  const favorites = saved.filter((session) => session.id !== planned?.id);
+  const showSuggestion = !planned && saved.length === 0;
   const week = weekDates(today);
   const letters = weekdayLetters();
   const risk = !trainedToday && streak > 0 && now.getHours() >= riskFromHour(state.profile.reminderHour);
@@ -99,16 +101,7 @@ export function HomeScreen({
         </button>
       ) : null}
 
-      <section className="card stack">
-        <p className="eyebrow">{planned ? "I dag" : trainedToday ? "En økt til" : "Foreslått"}</p>
-        <div className="between">
-          <h2>{featured.name}</h2>
-          <span className="pill">{formatDuration(seconds)}</span>
-        </div>
-        <p className="muted">{featured.summary}</p>
-        <button className="btn block" onClick={() => onStart(featured.id)}><Icon name="play" /> Start</button>
-        <button className="textbtn" onClick={() => onOpen(featured.id)}>Se økten</button>
-      </section>
+      {planned ? <StartCard eyebrow="I dag" session={planned} onStart={onStart} onOpen={onOpen} onChallenge={onChallenge} /> : null}
 
       {favorites.length > 0 ? (
         <section className="card stack">
@@ -117,11 +110,24 @@ export function HomeScreen({
             {favorites.map((session) => (
               <div key={session.id} className="quick-row">
                 <button className="textbtn" onClick={() => onOpen(session.id)}>{session.name}</button>
-                <button className="btn" onClick={() => onStart(session.id)}><Icon name="play" /> Start</button>
+                <div className="btn-row">
+                  <button className="btn" onClick={() => onStart(session.id)}><Icon name="play" /> Start</button>
+                  <button className="btn ghost" onClick={() => onChallenge(session.id)}>Utfordre</button>
+                </div>
               </div>
             ))}
           </div>
         </section>
+      ) : null}
+
+      {showSuggestion ? (
+        <StartCard
+          eyebrow={trainedToday ? "En økt til" : "Foreslått"}
+          session={suggestion}
+          onStart={onStart}
+          onOpen={onOpen}
+          onChallenge={onChallenge}
+        />
       ) : null}
 
       <section className="card stack">
@@ -140,5 +146,36 @@ export function HomeScreen({
       <button className="btn ghost block" onClick={onPlan}>Ukeplan</button>
       <button className="btn ghost block" onClick={onCode}>Legg inn en kode</button>
     </div>
+  );
+}
+
+function StartCard({
+  eyebrow,
+  session,
+  onStart,
+  onOpen,
+  onChallenge,
+}: {
+  eyebrow: string;
+  session: Session;
+  onStart: (id: string) => void;
+  onOpen: (id: string) => void;
+  onChallenge: (id: string) => void;
+}) {
+  const seconds = stepSeconds(expandSession(session, mustExercise));
+  return (
+    <section className="card stack">
+      <p className="eyebrow">{eyebrow}</p>
+      <div className="between">
+        <h2>{session.name}</h2>
+        <span className="pill">{formatDuration(seconds)}</span>
+      </div>
+      <p className="muted">{session.summary}</p>
+      <div className="btn-row">
+        <button className="btn" onClick={() => onStart(session.id)}><Icon name="play" /> Start</button>
+        <button className="btn ghost" onClick={() => onChallenge(session.id)}>Utfordre</button>
+      </div>
+      <button className="textbtn" onClick={() => onOpen(session.id)}>Se økten</button>
+    </section>
   );
 }

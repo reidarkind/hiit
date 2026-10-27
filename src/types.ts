@@ -52,6 +52,8 @@ export type Stick = {
   wrist: Pt;
   elbow2: Pt;
   wrist2: Pt;
+  toe: Pt;
+  toe2: Pt;
 };
 
 export type StickPose = {
@@ -59,6 +61,7 @@ export type StickPose = {
   b: Stick;
   face: "side" | "front";
   prop?: StickProp;
+  wall?: { x: number; y: number; w: number; h: number };
 };
 
 export type Exercise = {

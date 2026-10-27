@@ -18,6 +18,9 @@ const FEEL: Record<string, Level> = {
   GAJO: "middels",
   FART: "krevende",
   PYRA: "middels",
+  STIG: "middels",
+  BAKK: "middels",
+  KILM: "krevende",
   NX44: "krevende",
   NX14: "krevende",
   NX24: "krevende",
@@ -27,7 +30,7 @@ const FEEL: Record<string, Level> = {
   ST7: "krevende",
   STOL: "middels",
   VEKT: "middels",
-  BALL: "lett",
+  BALL: "middels",
   STRK: "middels",
 };
 

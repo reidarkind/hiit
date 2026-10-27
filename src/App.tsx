@@ -147,7 +147,7 @@ export function App() {
     ? "sessions"
     : route.name === "library" || route.name === "exercise"
       ? "library"
-      : route.name === "progress" || route.name === "code"
+      : route.name === "progress"
         ? "progress"
         : "home";
 
@@ -165,10 +165,21 @@ export function App() {
         onSettings={() => setRoute({ name: "settings" })}
         onCode={() => setRoute({ name: "code", initial: "", back: "home" })}
         onPlan={() => setRoute({ name: "plan" })}
+        onChallenge={(id) => {
+          const session = findSession(state, id);
+          if (session) openShare("U", session);
+        }}
       />
     );
   } else if (route.name === "sessions") {
-    screen = <SessionsScreen state={state} onOpen={(id) => setRoute({ name: "session", id })} onCreate={() => setRoute({ name: "builder" })} />;
+    screen = (
+      <SessionsScreen
+        state={state}
+        onOpen={(id) => setRoute({ name: "session", id })}
+        onCreate={() => setRoute({ name: "builder" })}
+        onFavorite={(id) => setState((current) => ({ ...current, favorites: toggleFavorite(current.favorites, id) }))}
+      />
+    );
   } else if (route.name === "session") {
     const session = findSession(state, route.id);
     screen = session ? (
@@ -254,7 +265,6 @@ export function App() {
         state={state}
         today={today}
         nowMinutes={now.getHours() * 60 + now.getMinutes()}
-        onCode={() => setRoute({ name: "code", initial: "", back: "progress" })}
         onRename={(id, name) => setState((current) => ({
           ...current,
           partners: current.partners.map((partner) => (partner.id === id ? { ...partner, name } : partner)),
@@ -303,7 +313,7 @@ export function App() {
     screen = (
       <CodeScreen
         initial={route.initial}
-        onBack={() => setRoute(route.back === "home" ? { name: "home" } : { name: "progress" })}
+        onBack={() => setRoute({ name: "home" })}
         onApply={(decoded) => {
           const applied = applyDecoded(state, decoded, today, new Date().toISOString());
           setState(applied.state);
