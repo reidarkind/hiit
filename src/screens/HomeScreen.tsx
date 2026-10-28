@@ -5,7 +5,7 @@ import { greeting, weekDates, weekdayLetters } from "../lib/dates";
 import { formatDuration } from "../lib/format";
 import { expandSession, stepSeconds } from "../lib/expand";
 import { levelFor, totalXp } from "../lib/level";
-import { plannedSessionId } from "../lib/plan";
+import { WEEKDAYS, plannedSessionId } from "../lib/plan";
 import { countingDates, morningStreak, riskFromHour, streakCount } from "../lib/streak";
 import { suggestId } from "../lib/suggest";
 import { daysFromEpoch } from "../lib/dates";
@@ -45,7 +45,7 @@ export function HomeScreen({
   const bird = morningStreak([...new Set(mornings)], today, now.getHours() * 60 + now.getMinutes(), cutoff);
   const level = levelFor(totalXp(state.history));
   const suggestion = builtinById(suggestId({ trainedToday, hour: now.getHours(), dayIndex: daysFromEpoch(today, EPOCH) }))!;
-  const planned = findSession(state, plannedSessionId(state.planWeek, today) ?? "");
+  const planned = findSession(state, plannedSessionId(state.planWeek, state.planDates, today) ?? "");
   const saved = state.favorites
     .map((id) => findSession(state, id))
     .filter((session): session is Session => session !== undefined);
@@ -133,7 +133,7 @@ export function HomeScreen({
       <section className="card stack">
         <div className="between">
           <h2>Denne uken</h2>
-          <span className="muted small">{weekCount} / {state.profile.weeklyGoal}</span>
+          <span className="muted small">{weekCount} / {state.profile.weeklyGoal} dager</span>
         </div>
         <div className="week">
           {week.map((day, index) => (
@@ -141,6 +141,19 @@ export function HomeScreen({
               <i className={`${dates.includes(day) ? "on" : ""} ${state.bridgedDays.includes(day) ? "freeze" : ""} ${day === today ? "today" : ""}`}>{dates.includes(day) ? "●" : letters[index]}</i>
             </div>
           ))}
+        </div>
+        <div className="stack">
+          {week.flatMap((day, index) => {
+            const id = plannedSessionId(state.planWeek, state.planDates, day);
+            const named = id ? findSession(state, id) : undefined;
+            if (!named && !Object.hasOwn(state.planDates, day)) return [];
+            return [(
+              <div key={day} className="between">
+                <span>{WEEKDAYS[index]}</span>
+                <span className="muted">{named?.name ?? "Hvile"}</span>
+              </div>
+            )];
+          })}
         </div>
       </section>
       <button className="btn ghost block" onClick={onPlan}>Ukeplan</button>

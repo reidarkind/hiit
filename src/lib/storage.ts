@@ -2,7 +2,7 @@ import type { AppState, Profile, Session } from "../types";
 import { STORAGE_KEY } from "./constants";
 import { exerciseById } from "../data/exercises";
 import { randomId } from "./id";
-import { emptyWeek } from "./plan";
+import { emptyWeek, type PlanDates } from "./plan";
 
 export function defaultProfile(id: string): Profile {
   return {
@@ -35,7 +35,19 @@ export function freshState(id = ""): AppState {
     reminderDate: null,
     favorites: [],
     planWeek: emptyWeek(),
+    planDates: {},
   };
+}
+
+function cleanPlanDates(value: unknown): PlanDates {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const next: PlanDates = {};
+  for (const [date, id] of Object.entries(value)) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+    if (id === null) next[date] = null;
+    else if (typeof id === "string" && id) next[date] = id;
+  }
+  return next;
 }
 
 function cleanPlan(value: unknown): (string | null)[] {
@@ -96,6 +108,7 @@ export function parseState(raw: string | null, idFactory: () => string = () => r
       reminderDate: data.reminderDate ?? null,
       favorites: Array.isArray(data.favorites) ? data.favorites.filter((id): id is string => typeof id === "string") : [],
       planWeek: cleanPlan(data.planWeek),
+      planDates: cleanPlanDates(data.planDates),
     };
   } catch {
     return freshState(idFactory());

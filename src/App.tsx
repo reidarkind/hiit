@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { AppState, Block, Completion, Profile, Session } from "./types";
 import { exerciseById, mustExercise } from "./data/exercises";
 import { findSession } from "./data/sessions";
@@ -8,10 +8,11 @@ import { assess } from "./lib/complete";
 import { todayIso } from "./lib/dates";
 import { expandSession } from "./lib/expand";
 import { randomId } from "./lib/id";
-import { setWeekday, toggleFavorite } from "./lib/plan";
+import { forgetSessionDates, setPlanDate, setWeekday, toggleFavorite } from "./lib/plan";
 import { shareMessage } from "./lib/sms";
 import { addCompletion, applyDecoded } from "./lib/social";
 import { STORAGE_KEY } from "./lib/constants";
+import { rememberListScroll, scrollForRoute, type ListScroll } from "./lib/scroll";
 import { freshState, load, parseState, save } from "./lib/storage";
 import { awardFreezes, countingDates, reconcileFreezes, streakCount } from "./lib/streak";
 import { registerPwa } from "./pwa";
@@ -63,6 +64,17 @@ export function App() {
   const [{ state: initial, rescued }] = useState(boot);
   const [state, setState] = useState(initial);
   const [route, setRoute] = useState<Route>({ name: "home" });
+  const listScroll = useRef<ListScroll>({ sessions: 0, library: 0 });
+  const routeKey = `${route.name}:${"id" in route ? route.id ?? "" : ""}`;
+
+  function go(next: Route) {
+    listScroll.current = rememberListScroll(route.name, window.scrollY, listScroll.current);
+    setRoute(next);
+  }
+
+  useLayoutEffect(() => {
+    window.scrollTo(0, scrollForRoute(route.name, listScroll.current));
+  }, [routeKey]);
   const [now, setNow] = useState(() => new Date());
   const [draft, setDraft] = useState<{ title: string; text: string } | null>(null);
   const [notice, setNotice] = useState<{ text: string; tone: "good" | "warn" } | null>(null);
@@ -85,7 +97,7 @@ export function App() {
 
   useEffect(() => {
     const hash = decodeURIComponent(window.location.hash.replace(/^#k=/, ""));
-    if (window.location.hash.startsWith("#k=") && hash) setRoute({ name: "code", initial: hash });
+    if (window.location.hash.startsWith("#k=") && hash) go({ name: "code", initial: hash });
     registerPwa((next) => setUpdate(() => next));
   }, []);
 
@@ -136,11 +148,11 @@ export function App() {
     const previousStreak = streakCount(countingDates(state.history), state.bridgedDays, today);
     const completion = assess(state, { id: randomId(8), now: new Date(), session, steps, index, finished, elapsed });
     if (completion.seconds < 1) {
-      setRoute({ name: "home" });
+      go({ name: "home" });
       return;
     }
     setState((current) => addCompletion(current, completion, today));
-    setRoute({ name: "done", completion, beforeBadges, previousStreak });
+    go({ name: "done", completion, beforeBadges, previousStreak });
   }
 
   const tab = route.name === "sessions" || route.name === "session" || route.name === "builder"
@@ -160,11 +172,11 @@ export function App() {
         now={now}
         rescued={rescued}
         onDismissIntro={() => setState((current) => ({ ...current, seenIntro: true }))}
-        onStart={(id) => setRoute({ name: "player", id, rounds: 1 })}
-        onOpen={(id) => setRoute({ name: "session", id })}
-        onSettings={() => setRoute({ name: "settings" })}
-        onCode={() => setRoute({ name: "code", initial: "", back: "home" })}
-        onPlan={() => setRoute({ name: "plan" })}
+        onStart={(id) => go({ name: "player", id, rounds: 1 })}
+        onOpen={(id) => go({ name: "session", id })}
+        onSettings={() => go({ name: "settings" })}
+        onCode={() => go({ name: "code", initial: "", back: "home" })}
+        onPlan={() => go({ name: "plan" })}
         onChallenge={(id) => {
           const session = findSession(state, id);
           if (session) openShare("U", session);
@@ -175,8 +187,8 @@ export function App() {
     screen = (
       <SessionsScreen
         state={state}
-        onOpen={(id) => setRoute({ name: "session", id })}
-        onCreate={() => setRoute({ name: "builder" })}
+        onOpen={(id) => go({ name: "session", id })}
+        onCreate={() => go({ name: "builder" })}
         onFavorite={(id) => setState((current) => ({ ...current, favorites: toggleFavorite(current.favorites, id) }))}
       />
     );
@@ -186,16 +198,16 @@ export function App() {
       <SessionScreen
         session={session}
         favorite={state.favorites.includes(session.id)}
-        onBack={() => setRoute({ name: "sessions" })}
-        onStart={(rounds) => setRoute({ name: "player", id: session.id, rounds })}
+        onBack={() => go({ name: "sessions" })}
+        onStart={(rounds) => go({ name: "player", id: session.id, rounds })}
         onShare={() => openShare("D", session)}
         onChallenge={() => openShare("U", session)}
         onFavorite={() => setState((current) => ({ ...current, favorites: toggleFavorite(current.favorites, session.id) }))}
-        onEdit={() => setRoute({ name: "builder", id: session.id })}
+        onEdit={() => go({ name: "builder", id: session.id })}
         onCopy={() => {
           const copy = variant(session);
           setState((current) => ({ ...current, customSessions: [...current.customSessions, copy] }));
-          setRoute({ name: "builder", id: copy.id });
+          go({ name: "builder", id: copy.id });
         }}
         onDelete={() => {
           setState((current) => ({
@@ -204,8 +216,9 @@ export function App() {
             receivedSessions: current.receivedSessions.filter((item) => item.id !== session.id),
             favorites: current.favorites.filter((id) => id !== session.id),
             planWeek: current.planWeek.map((id) => (id === session.id ? null : id)),
+            planDates: forgetSessionDates(current.planDates, session.id),
           }));
-          setRoute({ name: "sessions" });
+          go({ name: "sessions" });
         }}
       />
     ) : <p>Fant ikke økten.</p>;
@@ -214,18 +227,18 @@ export function App() {
     screen = (
       <BuilderScreen
         initial={initialSession?.builtin ? null : initialSession}
-        onBack={() => setRoute({ name: "sessions" })}
+        onBack={() => go({ name: "sessions" })}
         onSave={(name, blocks) => {
           setState((current) => saveBuilt(current, route.id, name, blocks));
-          setRoute({ name: "sessions" });
+          go({ name: "sessions" });
         }}
       />
     );
   } else if (route.name === "library") {
-    screen = <LibraryScreen onOpen={(id) => setRoute({ name: "exercise", id })} />;
+    screen = <LibraryScreen onOpen={(id) => go({ name: "exercise", id })} />;
   } else if (route.name === "exercise") {
     const exercise = exerciseById(route.id);
-    screen = exercise ? <ExerciseScreen exercise={exercise} onBack={() => setRoute({ name: "library" })} /> : <p>Fant ikke øvelsen.</p>;
+    screen = exercise ? <ExerciseScreen exercise={exercise} onBack={() => go({ name: "library" })} /> : <p>Fant ikke øvelsen.</p>;
   } else if (route.name === "player") {
     const session = findSession(state, route.id);
     screen = session ? (
@@ -233,7 +246,7 @@ export function App() {
         title={session.name}
         steps={expandSession(session, mustExercise, route.rounds)}
         profile={state.profile}
-        onClose={() => setRoute({ name: "home" })}
+        onClose={() => go({ name: "home" })}
         onDone={(finished, index, elapsed) => finish(finished, index, elapsed, session, route.rounds)}
       />
     ) : <p>Fant ikke økten.</p>;
@@ -245,7 +258,7 @@ export function App() {
         beforeBadges={route.beforeBadges}
         previousStreak={route.previousStreak}
         today={today}
-        onHome={() => setRoute({ name: "home" })}
+        onHome={() => go({ name: "home" })}
         onShare={() => {
           const session = findSession(state, route.completion.sessionId);
           if (session) openShare("G", session);
@@ -275,7 +288,7 @@ export function App() {
     screen = (
       <SettingsScreen
         state={state}
-        onBack={() => setRoute({ name: "home" })}
+        onBack={() => go({ name: "home" })}
         onProfile={(profile: Profile) => setState((current) => ({ ...current, profile }))}
         onExport={() => download(JSON.stringify(state, null, 2))}
         onImport={(file) => {
@@ -297,7 +310,7 @@ export function App() {
           const fresh = bootFresh();
           setState(fresh);
           setConfirmReset(false);
-          setRoute({ name: "home" });
+          go({ name: "home" });
         }}
       />
     );
@@ -305,21 +318,23 @@ export function App() {
     screen = (
       <PlanScreen
         state={state}
-        onBack={() => setRoute({ name: "home" })}
-        onSet={(index, sessionId) => setState((current) => ({ ...current, planWeek: setWeekday(current.planWeek, index, sessionId) }))}
+        today={today}
+        onBack={() => go({ name: "home" })}
+        onSetWeekday={(index, sessionId) => setState((current) => ({ ...current, planWeek: setWeekday(current.planWeek, index, sessionId) }))}
+        onSetDate={(iso, sessionId) => setState((current) => ({ ...current, planDates: setPlanDate(current.planDates, iso, sessionId) }))}
       />
     );
   } else {
     screen = (
       <CodeScreen
         initial={route.initial}
-        onBack={() => setRoute({ name: "home" })}
+        onBack={() => go({ name: "home" })}
         onApply={(decoded) => {
           const applied = applyDecoded(state, decoded, today, new Date().toISOString());
           setState(applied.state);
           setNotice({ text: applied.note, tone: "good" });
-          if (applied.sessionId && (decoded.kind === "D" || decoded.kind === "U")) setRoute({ name: "session", id: applied.sessionId });
-          else setRoute({ name: "progress" });
+          if (applied.sessionId && (decoded.kind === "D" || decoded.kind === "U")) go({ name: "session", id: applied.sessionId });
+          else go({ name: "progress" });
         }}
       />
     );
@@ -340,10 +355,10 @@ export function App() {
       )}
       {route.name !== "player" ? (
         <nav className="nav">
-          <NavButton icon="home" label="Hjem" on={tab === "home"} onClick={() => setRoute({ name: "home" })} />
-          <NavButton icon="list" label="Økter" on={tab === "sessions"} onClick={() => setRoute({ name: "sessions" })} />
-          <NavButton icon="grid" label="Øvelser" on={tab === "library"} onClick={() => setRoute({ name: "library" })} />
-          <NavButton icon="chart" label="Fremgang" on={tab === "progress"} onClick={() => setRoute({ name: "progress" })} />
+          <NavButton icon="home" label="Hjem" on={tab === "home"} onClick={() => go({ name: "home" })} />
+          <NavButton icon="list" label="Økter" on={tab === "sessions"} onClick={() => go({ name: "sessions" })} />
+          <NavButton icon="grid" label="Øvelser" on={tab === "library"} onClick={() => go({ name: "library" })} />
+          <NavButton icon="chart" label="Fremgang" on={tab === "progress"} onClick={() => go({ name: "progress" })} />
         </nav>
       ) : null}
       {draft ? <ShareSheet title={draft.title} text={draft.text} onClose={() => setDraft(null)} /> : null}

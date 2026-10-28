@@ -181,4 +181,5 @@ export type AppState = {
   reminderDate: string | null;
   favorites: string[];
   planWeek: (string | null)[];
+  planDates: Record<string, string | null>;
 };
